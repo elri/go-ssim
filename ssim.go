@@ -8,8 +8,6 @@ import (
 	_ "image/png"
 	"math"
 	"os"
-
-	"github.com/elri/go-ssim/util"
 )
 
 // Default SSIM constants
@@ -21,23 +19,35 @@ var (
 	C2 = math.Pow((K2 * L), 2.0)
 )
 
-func CalculateSSIM(imgFile1, imgFile2 string) float64 {
-	//Read image
-	img := readImage(imgFile1)
-	img2 := readImage(imgFile2)
+func CalculateSSIM(imgFile1, imgFile2 string) (float64, error) {
+	var err error
+	var img, img2 image.Image
+	index := -1.0
 
-	// Convert to grayscale
-	img = convertToGray(img)
-	img2 = convertToGray(img2)
+	//Read images
+	img, err = readImage(imgFile1)
+	if err == nil {
 
-	// Calculate SSIM
-	index := ssim(img, img2)
+		img2, err = readImage(imgFile2)
+		if err == nil {
 
-	return index
+			// Convert to grayscale
+			img = convertToGray(img)
+			img2 = convertToGray(img2)
+
+			// Calculate SIM
+			index, err = ssim(img, img2)
+		}
+	}
+
+	return index, err
+
 }
 
-// SSIM algorithm implementation
-func ssim(x, y image.Image) float64 {
+// SSIM algorithm implementation, see https://en.wikipedia.org/wiki/Structural_similarity
+func ssim(x, y image.Image) (float64, error) {
+	var index float64
+
 	avg_x := mean(x)
 	avg_y := mean(y)
 
@@ -45,13 +55,15 @@ func ssim(x, y image.Image) float64 {
 	stdev_y := stdev(y)
 
 	cov, err := covar(x, y)
-	util.HandleError(err)
+	if err == nil {
+		numerator := ((2.0 * avg_x * avg_y) + C1) * ((2.0 * cov) + C2)
+		denominator := (math.Pow(avg_x, 2.0) + math.Pow(avg_y, 2.0) + C1) *
+			(math.Pow(stdev_x, 2.0) + math.Pow(stdev_y, 2.0) + C2)
 
-	numerator := ((2.0 * avg_x * avg_y) + C1) * ((2.0 * cov) + C2)
-	denominator := (math.Pow(avg_x, 2.0) + math.Pow(avg_y, 2.0) + C1) *
-		(math.Pow(stdev_x, 2.0) + math.Pow(stdev_y, 2.0) + C2)
+		index = numerator / denominator
+	}
 
-	return numerator / denominator
+	return index, err
 }
 
 // Calculate the covariance of 2 images
@@ -79,14 +91,15 @@ func covar(img1, img2 image.Image) (c float64, err error) {
 
 // Given a path to an image file, read and return as
 // an image.Image
-func readImage(fname string) image.Image {
+func readImage(fname string) (image.Image, error) {
 	file, err := os.Open(fname)
-	util.HandleError(err)
+	if err != nil {
+		return nil, err
+	}
 	defer file.Close()
 
 	img, _, err := image.Decode(file)
-	util.HandleError(err)
-	return img
+	return img, err
 }
 
 // Convert an Image to grayscale which

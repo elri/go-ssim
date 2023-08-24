@@ -21,7 +21,10 @@ func main() {
 		return
 	}
 
-	index := ssim.CalculateSSIM(*imgFlag1, *imgFlag2)
-
-	fmt.Printf("\nSSIM = %f\n", index)
+	index, err := ssim.CalculateSSIM(*imgFlag1, *imgFlag2)
+	if err == nil {
+		fmt.Printf("SSIM = %f\n", index)
+	} else {
+		fmt.Println(err)
+	}
 }
