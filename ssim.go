@@ -5,9 +5,10 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
-	"log"
 	"math"
 	"os"
+
+	"github.com/elri/go-ssim/util"
 )
 
 // Default SSIM constants
@@ -19,21 +20,15 @@ var (
 	C2 = math.Pow((K2 * L), 2.0)
 )
 
-func handleError(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 // Given a path to an image file, read and return as
 // an image.Image
 func ReadImage(fname string) image.Image {
 	file, err := os.Open(fname)
-	handleError(err)
+	util.HandleError(err)
 	defer file.Close()
 
 	img, _, err := image.Decode(file)
-	handleError(err)
+	util.HandleError(err)
 	return img
 }
 
@@ -59,7 +54,7 @@ func ConvertToGray(originalImg image.Image) image.Image {
 // Write an image.Image to a jpg file of quality 100
 func WriteImage(img image.Image, path string) {
 	w, err := os.Create(path + ".jpg")
-	handleError(err)
+	util.HandleError(err)
 	defer w.Close()
 
 	quality := jpeg.Options{Quality: 100}
@@ -149,7 +144,7 @@ func CalculateSSIM(x, y image.Image) float64 {
 	stdev_y := stdev(y)
 
 	cov, err := Covar(x, y)
-	handleError(err)
+	util.HandleError(err)
 
 	numerator := ((2.0 * avg_x * avg_y) + C1) * ((2.0 * cov) + C2)
 	denominator := (math.Pow(avg_x, 2.0) + math.Pow(avg_y, 2.0) + C1) *
