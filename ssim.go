@@ -27,7 +27,7 @@ func handleError(err error) {
 
 // Given a path to an image file, read and return as
 // an image.Image
-func readImage(fname string) image.Image {
+func ReadImage(fname string) image.Image {
 	file, err := os.Open(fname)
 	handleError(err)
 	defer file.Close()
@@ -39,7 +39,7 @@ func readImage(fname string) image.Image {
 
 // Convert an Image to grayscale which
 // equalize RGB values
-func convertToGray(originalImg image.Image) image.Image {
+func ConvertToGray(originalImg image.Image) image.Image {
 	bounds := originalImg.Bounds()
 	w, h := dim(originalImg)
 
@@ -57,7 +57,7 @@ func convertToGray(originalImg image.Image) image.Image {
 }
 
 // Write an image.Image to a jpg file of quality 100
-func writeImage(img image.Image, path string) {
+func WriteImage(img image.Image, path string) {
 	w, err := os.Create(path + ".jpg")
 	handleError(err)
 	defer w.Close()
@@ -119,7 +119,7 @@ func stdev(img image.Image) float64 {
 }
 
 // Calculate the covariance of 2 images
-func covar(img1, img2 image.Image) (c float64, err error) {
+func Covar(img1, img2 image.Image) (c float64, err error) {
 	if !equalDim(img1, img2) {
 		err = errors.New("Images must have same dimension")
 		return
@@ -141,14 +141,14 @@ func covar(img1, img2 image.Image) (c float64, err error) {
 	return
 }
 
-func calculateSSIM(x, y image.Image) float64 {
+func CalculateSSIM(x, y image.Image) float64 {
 	avg_x := mean(x)
 	avg_y := mean(y)
 
 	stdev_x := stdev(x)
 	stdev_y := stdev(y)
 
-	cov, err := covar(x, y)
+	cov, err := Covar(x, y)
 	handleError(err)
 
 	numerator := ((2.0 * avg_x * avg_y) + C1) * ((2.0 * cov) + C2)
