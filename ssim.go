@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
+	"log"
 	"math"
 	"os"
 )
@@ -17,6 +18,12 @@ var (
 	C1 = math.Pow((K1 * L), 2.0)
 	C2 = math.Pow((K2 * L), 2.0)
 )
+
+func handleError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 // Given a path to an image file, read and return as
 // an image.Image
@@ -55,7 +62,7 @@ func writeImage(img image.Image, path string) {
 	handleError(err)
 	defer w.Close()
 
-	quality := jpeg.Options{100}
+	quality := jpeg.Options{Quality: 100}
 	jpeg.Encode(w, img, &quality)
 }
 
