@@ -1,24 +1,27 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
 	"github.com/elri/go-ssim"
-	"github.com/elri/go-ssim/util"
+)
+
+var (
+	imgFlag1 = flag.String("img1", "", "Image filepath #1")
+	imgFlag2 = flag.String("img2", "", "Image filepath #2")
 )
 
 func main() {
-	img := ssim.ConvertToGray(ssim.ReadImage("images/testImage0.jpg"))
-	img2 := ssim.ConvertToGray(ssim.ReadImage("images/testImage3.jpg"))
+	flag.Parse()
 
-	c, err := ssim.Covar(img, img2)
-	util.HandleError(err)
+	if *imgFlag1 == "" || *imgFlag2 == "" {
+		fmt.Println("MISSING ARGUMENTS...")
+		flag.Usage()
+		return
+	}
 
-	index := ssim.CalculateSSIM(img, img2)
+	index := ssim.CalculateSSIM(*imgFlag1, *imgFlag2)
 
-	// fmt.Printf("AVG   %f\n", mean(img))
-	// fmt.Printf("STDEV %f\n", stdev(img))
-	// fmt.Printf("COV   %f\n", c)
-	_ = c
 	fmt.Printf("\nSSIM = %f\n", index)
 }

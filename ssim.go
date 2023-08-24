@@ -4,7 +4,8 @@ import (
 	"errors"
 	"image"
 	"image/color"
-	"image/jpeg"
+	_ "image/jpeg"
+	_ "image/png"
 	"math"
 	"os"
 
@@ -20,9 +21,65 @@ var (
 	C2 = math.Pow((K2 * L), 2.0)
 )
 
+func CalculateSSIM(imgFile1, imgFile2 string) float64 {
+	//Read image
+	img := readImage(imgFile1)
+	img2 := readImage(imgFile2)
+
+	// Convert to grayscale
+	img = convertToGray(img)
+	img2 = convertToGray(img2)
+
+	// Calculate SSIM
+	index := ssim(img, img2)
+
+	return index
+}
+
+// SSIM algorithm implementation
+func ssim(x, y image.Image) float64 {
+	avg_x := mean(x)
+	avg_y := mean(y)
+
+	stdev_x := stdev(x)
+	stdev_y := stdev(y)
+
+	cov, err := covar(x, y)
+	util.HandleError(err)
+
+	numerator := ((2.0 * avg_x * avg_y) + C1) * ((2.0 * cov) + C2)
+	denominator := (math.Pow(avg_x, 2.0) + math.Pow(avg_y, 2.0) + C1) *
+		(math.Pow(stdev_x, 2.0) + math.Pow(stdev_y, 2.0) + C2)
+
+	return numerator / denominator
+}
+
+// Calculate the covariance of 2 images
+func covar(img1, img2 image.Image) (c float64, err error) {
+	if !equalDim(img1, img2) {
+		err = errors.New("images must have same dimension")
+		return
+	}
+	avg1 := mean(img1)
+	avg2 := mean(img2)
+	w, h := dim(img1)
+	sum := 0.0
+	n := float64((w * h) - 1)
+
+	for x := 0; x < w; x++ {
+		for y := 0; y < h; y++ {
+			pix1 := getPixVal(img1.At(x, y))
+			pix2 := getPixVal(img2.At(x, y))
+			sum += (pix1 - avg1) * (pix2 - avg2)
+		}
+	}
+	c = sum / n
+	return
+}
+
 // Given a path to an image file, read and return as
 // an image.Image
-func ReadImage(fname string) image.Image {
+func readImage(fname string) image.Image {
 	file, err := os.Open(fname)
 	util.HandleError(err)
 	defer file.Close()
@@ -34,7 +91,7 @@ func ReadImage(fname string) image.Image {
 
 // Convert an Image to grayscale which
 // equalize RGB values
-func ConvertToGray(originalImg image.Image) image.Image {
+func convertToGray(originalImg image.Image) image.Image {
 	bounds := originalImg.Bounds()
 	w, h := dim(originalImg)
 
@@ -49,16 +106,6 @@ func ConvertToGray(originalImg image.Image) image.Image {
 	}
 
 	return grayImg
-}
-
-// Write an image.Image to a jpg file of quality 100
-func WriteImage(img image.Image, path string) {
-	w, err := os.Create(path + ".jpg")
-	util.HandleError(err)
-	defer w.Close()
-
-	quality := jpeg.Options{Quality: 100}
-	jpeg.Encode(w, img, &quality)
 }
 
 // Convert uint32 R value to a float. The returnng
@@ -111,44 +158,4 @@ func stdev(img image.Image) float64 {
 		}
 	}
 	return math.Sqrt(sum / n)
-}
-
-// Calculate the covariance of 2 images
-func Covar(img1, img2 image.Image) (c float64, err error) {
-	if !equalDim(img1, img2) {
-		err = errors.New("Images must have same dimension")
-		return
-	}
-	avg1 := mean(img1)
-	avg2 := mean(img2)
-	w, h := dim(img1)
-	sum := 0.0
-	n := float64((w * h) - 1)
-
-	for x := 0; x < w; x++ {
-		for y := 0; y < h; y++ {
-			pix1 := getPixVal(img1.At(x, y))
-			pix2 := getPixVal(img2.At(x, y))
-			sum += (pix1 - avg1) * (pix2 - avg2)
-		}
-	}
-	c = sum / n
-	return
-}
-
-func CalculateSSIM(x, y image.Image) float64 {
-	avg_x := mean(x)
-	avg_y := mean(y)
-
-	stdev_x := stdev(x)
-	stdev_y := stdev(y)
-
-	cov, err := Covar(x, y)
-	util.HandleError(err)
-
-	numerator := ((2.0 * avg_x * avg_y) + C1) * ((2.0 * cov) + C2)
-	denominator := (math.Pow(avg_x, 2.0) + math.Pow(avg_y, 2.0) + C1) *
-		(math.Pow(stdev_x, 2.0) + math.Pow(stdev_y, 2.0) + C2)
-
-	return numerator / denominator
 }
