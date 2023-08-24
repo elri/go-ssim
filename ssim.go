@@ -19,6 +19,11 @@ var (
 	C2 = math.Pow((K2 * L), 2.0)
 )
 
+/*
+Calculate the similarity between two given images
+
+Note! The paths must (probably) be absolute, cannot contain '~'
+*/
 func CalculateSSIM(imgFile1, imgFile2 string) (float64, error) {
 	var err error
 	var img, img2 image.Image
